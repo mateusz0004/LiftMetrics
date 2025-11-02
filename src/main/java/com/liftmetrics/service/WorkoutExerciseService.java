@@ -4,7 +4,7 @@ import com.liftmetrics.dto.set.WorkoutSetRequestDTO;
 import com.liftmetrics.dto.set.WorkoutSetResponseDTO;
 import com.liftmetrics.exception.exercise.ExerciseDoesNotExist;
 import com.liftmetrics.exception.set.SetDoesNotExistException;
-import com.liftmetrics.exception.workoutExercise.ListOfSetsDoesNotExistException;
+import com.liftmetrics.exception.set.ListOfSetsDoesNotExistException;
 import com.liftmetrics.exception.workoutExercise.WorkoutExerciseDoesNotExistException;
 import com.liftmetrics.mapper.WorkoutExerciseMapper;
 import com.liftmetrics.mapper.WorkoutSetMapper;
@@ -111,7 +111,3 @@ public WorkoutSetResponseDTO addSetToWorkoutExercise(Long exerciseId, WorkoutSet
         workoutExerciseRepository.save(workoutExercise);
     }
 }
-
-
-/// ///// zrobic te mappery dla kazdej klasy (dopytać czata czy trzeba dla wszysstkich entity robic takie maperki)
-/// ////// zrobic te relacje dla kazdej klasy

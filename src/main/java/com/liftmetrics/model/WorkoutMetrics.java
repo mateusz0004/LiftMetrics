@@ -3,7 +3,6 @@ package com.liftmetrics.model;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.List;
 
 @Entity
 @Table(name = "workout_metrics")
@@ -21,5 +20,5 @@ public class WorkoutMetrics {
     private double exerciseTotalVolume;
     @OneToOne
     @JoinColumn(name = "workout_exercise_id")
-    private WorkoutExercise workoutExercises;
+    private WorkoutExercise workoutExercise;
 }
