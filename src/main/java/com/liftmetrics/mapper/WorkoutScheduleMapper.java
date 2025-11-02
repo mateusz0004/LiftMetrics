@@ -8,7 +8,8 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring", uses = {WorkoutSessionMapper.class})
 public interface WorkoutScheduleMapper {
-
+    @Mapping(source = "userId", target = "user.id")
     WorkoutSchedule toEntity(WorkoutScheduleRequestDTO dto);
+    @Mapping(source = "user.id", target = "userId")
     WorkoutScheduleResponseDTO toResponseDto(WorkoutSchedule entity);
 }

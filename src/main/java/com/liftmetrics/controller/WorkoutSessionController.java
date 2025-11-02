@@ -1,5 +1,8 @@
 package com.liftmetrics.controller;
 
+import com.liftmetrics.dto.session.WorkoutSessionRequestDTO;
+import com.liftmetrics.dto.session.WorkoutSessionResponseDTO;
+import com.liftmetrics.dto.workoutExercise.WorkoutExerciseRequestDTO;
 import com.liftmetrics.model.WorkoutExercise;
 import com.liftmetrics.model.WorkoutSession;
 import com.liftmetrics.service.WorkoutSessionService;
@@ -21,27 +24,27 @@ public class WorkoutSessionController {
     }
 
     @GetMapping
-    public ResponseEntity<List<WorkoutSession>> getAllWorkoutSessions() {
+    public ResponseEntity<List<WorkoutSessionResponseDTO>> getAllWorkoutSessions() {
         return ResponseEntity.ok(workoutSessionService.findAll());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<WorkoutSession> getWorkoutSessionById(@PathVariable Long id) {
+    public ResponseEntity<WorkoutSessionResponseDTO> getWorkoutSessionById(@PathVariable Long id) {
         return ResponseEntity.ok(workoutSessionService.getWorkoutSessionById(id));
     }
 
     @PostMapping
-    public ResponseEntity<WorkoutSession> addWorkoutSession(@Valid @RequestBody WorkoutSession workoutSession) {
-        WorkoutSession created = workoutSessionService.addWorkoutSession(workoutSession);
+    public ResponseEntity<WorkoutSessionResponseDTO> addWorkoutSession(@Valid @RequestBody WorkoutSessionRequestDTO workoutSessionRequestDTO) {
+        WorkoutSessionResponseDTO created = workoutSessionService.addWorkoutSession(workoutSessionRequestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<WorkoutSession> updateWorkoutSession(
+    public ResponseEntity<WorkoutSessionResponseDTO> updateWorkoutSession(
             @PathVariable Long id,
-            @Valid @RequestBody WorkoutSession workoutSession
+            @Valid @RequestBody WorkoutSessionRequestDTO workoutSessionRequestDTO
     ) {
-        return ResponseEntity.ok(workoutSessionService.updateWorkoutSession(id, workoutSession));
+        return ResponseEntity.ok(workoutSessionService.updateWorkoutSession(id, workoutSessionRequestDTO));
     }
 
     @DeleteMapping("/{id}")
@@ -51,11 +54,11 @@ public class WorkoutSessionController {
     }
 
     @PostMapping("/{sessionId}/exercises")
-    public ResponseEntity<WorkoutSession> addExerciseToWorkoutSession(
+    public ResponseEntity<WorkoutSessionResponseDTO> addExerciseToWorkoutSession(
             @PathVariable Long sessionId,
-            @Valid @RequestBody WorkoutExercise workoutExercise
+            @Valid @RequestBody WorkoutExerciseRequestDTO workoutExerciseRequestDTO
     ) {
-        WorkoutSession updated = workoutSessionService.addExerciseToWorkoutSession(sessionId, workoutExercise);
+        WorkoutSessionResponseDTO updated = workoutSessionService.addExerciseToWorkoutSession(sessionId, workoutExerciseRequestDTO);
         return ResponseEntity.ok(updated);
     }
 
