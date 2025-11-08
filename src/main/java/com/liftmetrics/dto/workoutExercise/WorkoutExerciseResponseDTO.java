@@ -16,4 +16,5 @@ public class WorkoutExerciseResponseDTO {
     private ExerciseResponseDTO exercise;
     private List<WorkoutSetResponseDTO> workoutSetList;
     private int breakInSeconds;
+    private Long workoutSessionId;
 }
