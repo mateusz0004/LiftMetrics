@@ -13,7 +13,7 @@ import lombok.*;
 @Builder
 public class WorkoutMetrics {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
     private double IWV;
     private double fatigue;

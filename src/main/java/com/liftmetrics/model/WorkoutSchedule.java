@@ -17,7 +17,7 @@ import java.util.List;
 @AllArgsConstructor
 public class WorkoutSchedule {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
     private Type type;

@@ -18,7 +18,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class WorkoutSet {
     @Id
-    @GeneratedValue(strategy=GenerationType.AUTO)
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long id;
     @Positive
     private double weight;

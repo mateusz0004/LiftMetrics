@@ -1,4 +1,4 @@
-package com.liftmetrics.exception.workoutSession;
+package com.liftmetrics.exception.workoutExercise;
 
 public class WorkoutExerciseListDoesNotExist extends RuntimeException {
     public WorkoutExerciseListDoesNotExist(String message) {

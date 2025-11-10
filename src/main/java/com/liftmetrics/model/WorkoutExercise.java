@@ -18,7 +18,7 @@ import java.util.List;
 @AllArgsConstructor
 public class WorkoutExercise {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @ManyToOne
     @JoinColumn(name="exercise_id")

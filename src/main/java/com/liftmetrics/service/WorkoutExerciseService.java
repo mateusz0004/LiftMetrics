@@ -1,26 +1,24 @@
 package com.liftmetrics.service;
+
+import com.liftmetrics.dto.workoutExercise.WorkoutExerciseRequestDTO;
 import com.liftmetrics.dto.workoutExercise.WorkoutExerciseResponseDTO;
 import com.liftmetrics.dto.set.WorkoutSetRequestDTO;
 import com.liftmetrics.dto.set.WorkoutSetResponseDTO;
 import com.liftmetrics.exception.exercise.ExerciseDoesNotExist;
 import com.liftmetrics.exception.set.SetDoesNotExistException;
-import com.liftmetrics.exception.set.ListOfSetsDoesNotExistException;
 import com.liftmetrics.exception.workoutExercise.WorkoutExerciseDoesNotExistException;
+import com.liftmetrics.exception.workoutSession.WorkoutSessionDoesNotExist;
 import com.liftmetrics.mapper.WorkoutExerciseMapper;
 import com.liftmetrics.mapper.WorkoutSetMapper;
-import com.liftmetrics.model.Exercise;
-import com.liftmetrics.model.User;
-import com.liftmetrics.model.WorkoutSet;
-import com.liftmetrics.model.WorkoutExercise;
+import com.liftmetrics.model.*;
 import com.liftmetrics.repository.ExerciseRepository;
+import com.liftmetrics.repository.WorkoutSessionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.liftmetrics.repository.SetsRepository;
 import com.liftmetrics.repository.WorkoutExerciseRepository;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -33,93 +31,103 @@ public class WorkoutExerciseService {
     private final WorkoutExerciseMapper workoutExerciseMapper;
     private final ExerciseRepository exerciseRepository;
     private final UserService userService;
+    private final WorkoutSessionRepository workoutSessionRepository;
 
     public WorkoutExerciseService(WorkoutExerciseRepository workoutExerciseRepository, SetsRepository setsRepository, WorkoutSetMapper workoutSetMapper, WorkoutExerciseMapper workoutExerciseMapper, UserService userService
-                                  ,ExerciseRepository exerciseRepository) {
+            , ExerciseRepository exerciseRepository, WorkoutSessionRepository workoutSessionRepository) {
         this.workoutExerciseRepository = workoutExerciseRepository;
         this.setsRepository = setsRepository;
-        this.workoutSetMapper=workoutSetMapper;
-        this.workoutExerciseMapper=workoutExerciseMapper;
-        this.exerciseRepository=exerciseRepository;
-        this.userService=userService;
+        this.workoutSetMapper = workoutSetMapper;
+        this.workoutExerciseMapper = workoutExerciseMapper;
+        this.exerciseRepository = exerciseRepository;
+        this.userService = userService;
+        this.workoutSessionRepository = workoutSessionRepository;
     }
 
     public List<WorkoutExerciseResponseDTO> findAll() {
-        User currentUser = userService.getCurrentUser();
+        Long currentUserId = userService.getCurrentUser().getId();
 
-        return workoutExerciseRepository.findAll()
+
+        return workoutExerciseRepository.findAllByUserId(currentUserId)
                 .stream()
-                .filter(ex -> ex.getWorkoutSession() != null &&
-                        ex.getWorkoutSession().getWorkoutSchedule() != null &&
-                        ex.getWorkoutSession().getWorkoutSchedule().getUser().getId().equals(currentUser.getId()))
                 .map(workoutExerciseMapper::toResponseDto)
                 .collect(Collectors.toList());
     }
 
-    public WorkoutExercise getWorkoutExerciseById(Long id) {
-        User currentUser = userService.getCurrentUser();
-        return workoutExerciseRepository.findById(id)
-                .orElseThrow(() -> new WorkoutExerciseDoesNotExistException("This workout doesn't exist"));
+    public WorkoutExerciseResponseDTO getWorkoutExerciseById(Long id) {
+        Long currentUserId = userService.getCurrentUser().getId();
+
+        return workoutExerciseRepository.findByIdAndUserId(id, currentUserId)
+                .map(workoutExerciseMapper::toResponseDto)
+                .orElseThrow(() -> new WorkoutExerciseDoesNotExistException("Workout exercise does not exist"));
     }
 
-    public WorkoutExercise addExercise(WorkoutExercise workoutExercise) {
-        User currentUser = userService.getCurrentUser();
-        if (workoutExercise.getWorkoutSetList()==null) {
-            throw new ListOfSetsDoesNotExistException("Sets does not exist");
-        }
-        Optional<Exercise> existingExercise = exerciseRepository.findByName(workoutExercise.getExercise().getName());
-        if (existingExercise.isEmpty()) {
-            throw new ExerciseDoesNotExist(
-                    "Exercise " + workoutExercise.getExercise().getName() + " does not exist in exercise palette"
-            );
-        }
-        workoutExercise.setExercise(existingExercise.get());
+    public WorkoutExerciseResponseDTO addExercise(WorkoutExerciseRequestDTO dto) {
+        Long currentUserId = userService.getCurrentUser().getId();
 
-        if (workoutExercise.getWorkoutSession() != null &&
-                workoutExercise.getWorkoutSession().getWorkoutSchedule() != null &&
-                !workoutExercise.getWorkoutSession().getWorkoutSchedule().getUser().getId().equals(currentUser.getId())) {
-            throw new SecurityException("You cannot add exercises to another user's workout");
-        }
+        Exercise exercise = exerciseRepository.findByName(dto.getExercise().getName())
+                .orElseThrow(() -> new ExerciseDoesNotExist("Exercise does not exist"));
 
-        List<WorkoutSet> sets = new ArrayList<>(workoutExercise.getWorkoutSetList());
-        workoutExercise.getWorkoutSetList().clear();
-        for (WorkoutSet set : sets) {
+        WorkoutSession workoutSession = workoutSessionRepository.findByIdAndUserId(dto.getWorkoutSessionId(), currentUserId)
+                .orElseThrow(() -> new WorkoutSessionDoesNotExist("This session does not exist"));
+
+        WorkoutExercise workoutExercise = new WorkoutExercise();
+        workoutExercise.setExercise(exercise);
+        workoutExercise.setBreakInSeconds(dto.getBreakInSeconds());
+        workoutExercise.setWorkoutSession(workoutSession);
+        for (WorkoutSetRequestDTO setDTO : dto.getWorkoutSetList()) {
+            WorkoutSet set = workoutSetMapper.toEntity(setDTO);
             workoutExercise.addWorkoutSet(set);
         }
-        return workoutExerciseRepository.save(workoutExercise);
+        WorkoutExercise saved = workoutExerciseRepository.save(workoutExercise);
+        return workoutExerciseMapper.toResponseDto(saved);
     }
 
     public void deleteWorkoutExercise(Long exerciseId) {
-        WorkoutExercise workoutExercise = getWorkoutExerciseById(exerciseId);
+        Long currentUserId = userService.getCurrentUser().getId();
+        WorkoutExercise workoutExercise = workoutExerciseRepository.findByIdAndUserId(exerciseId, currentUserId)
+                .orElseThrow(()-> new WorkoutExerciseDoesNotExistException("This workoutExercise does not exist"));
         workoutExerciseRepository.delete(workoutExercise);
     }
 
-    public WorkoutExercise updateExercise(Long exerciseId, WorkoutExercise tempWorkoutExercise) {
-        WorkoutExercise workoutExercise = getWorkoutExerciseById(exerciseId);
-        workoutExercise.setExercise(tempWorkoutExercise.getExercise());
-        workoutExercise.setWorkoutSession(tempWorkoutExercise.getWorkoutSession());
-        workoutExercise.setBreakInSeconds(tempWorkoutExercise.getBreakInSeconds());
+    public WorkoutExerciseResponseDTO updateExercise(Long exerciseId, WorkoutExerciseRequestDTO dto) {
+        Long currentUserId = userService.getCurrentUser().getId();
+        Exercise exercise = exerciseRepository.findByName(dto.getExercise().getName())
+                .orElseThrow(()-> new ExerciseDoesNotExist("This workout exercise does not exist"));
+        WorkoutExercise workoutExercise = workoutExerciseRepository.findByIdAndUserId(exerciseId, currentUserId)
+                .orElseThrow(() -> new WorkoutExerciseDoesNotExistException("This workoutExercise does not exist"));
+        WorkoutSession workoutSession = workoutSessionRepository.findByIdAndUserId(dto.getWorkoutSessionId(), currentUserId)
+                        .orElseThrow(()-> new WorkoutExerciseDoesNotExistException("This workoutSession does not exist"));
+        workoutExercise.setExercise((exercise));
+        workoutExercise.setWorkoutSession(workoutSession);
+        workoutExercise.setBreakInSeconds(dto.getBreakInSeconds());
         workoutExercise.getWorkoutSetList().clear();
 
-        for (WorkoutSet newSet : tempWorkoutExercise.getWorkoutSetList()) {
-            workoutExercise.addWorkoutSet(newSet);
+
+        for (WorkoutSetRequestDTO newSet : dto.getWorkoutSetList()) {
+            workoutExercise.addWorkoutSet(workoutSetMapper.toEntity(newSet));
         }
-        return workoutExerciseRepository.save(workoutExercise);
+        WorkoutExercise saved = workoutExerciseRepository.save(workoutExercise);
+        return workoutExerciseMapper.toResponseDto(saved);
     }
 
-public WorkoutSetResponseDTO addSetToWorkoutExercise(Long exerciseId, WorkoutSetRequestDTO dto) {
-    WorkoutExercise workoutExercise = getWorkoutExerciseById(exerciseId);
+    public WorkoutSetResponseDTO addSetToWorkoutExercise(Long exerciseId, WorkoutSetRequestDTO dto) {
+        Long currentUserId = userService.getCurrentUser().getId();
+        WorkoutExercise workoutExercise = workoutExerciseRepository.findByIdAndUserId(exerciseId, currentUserId)
+                .orElseThrow(()-> new WorkoutExerciseDoesNotExistException("This workoutExercise does not exist"));
 
-    WorkoutSet newSet = workoutSetMapper.toEntity(dto);
-    workoutExercise.addWorkoutSet(newSet);
+        WorkoutSet newSet = workoutSetMapper.toEntity(dto);
+        workoutExercise.addWorkoutSet(newSet);
 
-    workoutExerciseRepository.save(workoutExercise);
+        workoutExerciseRepository.save(workoutExercise);
 
-    return workoutSetMapper.toResponseDTO(newSet);
-}
+        return workoutSetMapper.toResponseDTO(newSet);
+    }
 
     public void deleteSetFromWorkoutExercise(Long exerciseId, Long setId) {
-        WorkoutExercise workoutExercise = getWorkoutExerciseById(exerciseId);
+        Long currentUserId = userService.getCurrentUser().getId();
+        WorkoutExercise workoutExercise = workoutExerciseRepository.findByIdAndUserId(exerciseId, currentUserId)
+                .orElseThrow(()->new WorkoutExerciseDoesNotExistException("This workoutExercise does not exist"));
         WorkoutSet set = workoutExercise.getWorkoutSetList().stream()
                 .filter(s -> s.getId().equals(setId))
                 .findFirst()

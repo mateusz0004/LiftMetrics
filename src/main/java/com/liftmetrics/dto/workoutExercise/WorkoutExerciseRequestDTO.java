@@ -2,9 +2,7 @@ package com.liftmetrics.dto.workoutExercise;
 
 import com.liftmetrics.dto.exercise.ExerciseRequestDTO;
 import com.liftmetrics.dto.set.WorkoutSetRequestDTO;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -18,12 +16,11 @@ import java.util.List;
 public class WorkoutExerciseRequestDTO {
     @NotNull
     private ExerciseRequestDTO exercise;
-    @NotBlank
     private List<WorkoutSetRequestDTO> workoutSetList;
 
     @Min(0)
     private int breakInSeconds;
 
-    @NotBlank
+    @NotNull
     private Long workoutSessionId;
 }
